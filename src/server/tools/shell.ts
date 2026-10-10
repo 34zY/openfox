@@ -1,4 +1,8 @@
-import { resolve, isAbsolute } from 'node:path'
+import { spawn } from 'node:child_process'
+import { resolve, isAbsolute, relative, join } from 'node:path'
+import { access } from 'node:fs/promises'
+import { readFileSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
 import stripAnsi from 'strip-ansi'
 import { OUTPUT_LIMITS } from './types.js'
 import { createTool, requestUserConfirmation } from './tool-helpers.js'
@@ -12,6 +16,63 @@ import {
 } from './path-security.js'
 import { terminateProcessTree } from '../utils/process-tree.js'
 import { stripTailPipe } from './shell-tail.js'
+
+// ---- Remote workspace routing (gated) --------------------------------------
+// When a run_command working directory falls under a configured sshfs mount,
+// the command is transparently re-run on the remote host in the mapped path
+// (so builds/tests run on the remote machine). Local execution is byte-for-byte
+// unchanged whenever no mount matches. Config: ~/.config/openfox/remote-map.json
+export interface RemoteMount {
+  mountPath: string
+  host: string
+  user: string
+  remotePath: string
+  key?: string
+  shell?: string
+}
+
+const REMOTE_MAP_PATH = join(homedir(), '.config', 'openfox', 'remote-map.json')
+let _remoteMap: RemoteMount[] = []
+let _remoteMapMtime = -1
+
+function loadRemoteMap(): RemoteMount[] {
+  try {
+    const mtime = statSync(REMOTE_MAP_PATH).mtimeMs
+    if (mtime !== _remoteMapMtime) {
+      const parsed: unknown = JSON.parse(readFileSync(REMOTE_MAP_PATH, 'utf8'))
+      _remoteMap = Array.isArray(parsed) ? (parsed as RemoteMount[]) : []
+      _remoteMapMtime = mtime
+    }
+  } catch {
+    _remoteMap = []
+    _remoteMapMtime = -1
+  }
+  return _remoteMap
+}
+
+/** Pure: wrap a command to run on the mount's remote host in the mapped path. */
+export function wrapRemote(command: string, cwd: string, mount: RemoteMount): { command: string; cwd: string } {
+  const rel = relative(mount.mountPath, cwd)
+  const base = mount.remotePath.replace(/\/+$/, '')
+  const remoteCwd = rel && !rel.startsWith('..') ? `${base}/${rel}` : base
+  const shell = mount.shell || 'bash -l'
+  const script = `cd '${remoteCwd.replace(/'/g, "'\\''")}' && ${command}`
+  const b64 = Buffer.from(script, 'utf8').toString('base64')
+  const keyArg = mount.key ? `-i '${mount.key}' ` : ''
+  const ssh = `ssh ${keyArg}-o BatchMode=yes -o StrictHostKeyChecking=accept-new ${mount.user}@${mount.host} "echo ${b64} | base64 -d | ${shell}"`
+  return { command: ssh, cwd }
+}
+
+/** Route a command: remote-wrapped when cwd is under a configured mount, else unchanged. */
+export function remoteRoute(command: string, cwd: string): { command: string; cwd: string } {
+  const map = loadRemoteMap()
+  const norm = cwd.replace(/\/+$/, '')
+  const mount = map.find((m) => {
+    const mp = m.mountPath.replace(/\/+$/, '')
+    return norm === mp || norm.startsWith(mp + '/')
+  })
+  return mount ? wrapRemote(command, cwd, mount) : { command, cwd }
+}
 
 /**
  * Check if a command performs a Git mutation that changes branches or workspace state.
@@ -151,7 +212,8 @@ export const runCommandTool = createTool<RunCommandArgs>(
     const execCommand = tailInfo ? tailInfo.command : args.command
 
     const execStart = Date.now()
-    const result = await executeCommand(execCommand, workingDir, timeout, context.signal, context.onProgress)
+    const routed = remoteRoute(execCommand, workingDir)
+    const result = await executeCommand(routed.command, routed.cwd, timeout, context.signal, context.onProgress)
 
     let output = ''
 

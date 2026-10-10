@@ -1,6 +1,7 @@
 import { createTool, buildSignal } from './tool-helpers.js'
 import { getSetting } from '../db/settings.js'
 import { SETTINGS_KEYS } from '../db/settings.js'
+import { getCamofoxUrl, camofoxSnapshot, parseDuckduckgo } from './camofox.js'
 
 const DEFAULT_TIMEOUT_MS = 15_000
 const DEFAULT_MAX_RESULTS = 5
@@ -16,7 +17,10 @@ interface SearchResult {
   content: string
 }
 
-type EngineConfig = { engine: 'tavily'; apiKey: string } | { engine: 'searxng'; url: string; apiKey?: string }
+type EngineConfig =
+  | { engine: 'tavily'; apiKey: string }
+  | { engine: 'searxng'; url: string; apiKey?: string }
+  | { engine: 'camofox'; url: string }
 
 function getTavilyApiKey(): string | null {
   return process.env['TAVILY_API_KEY'] ?? getSetting(SETTINGS_KEYS.SEARCH_TAVILY_API_KEY)
@@ -50,6 +54,12 @@ function getActiveEngine(): EngineConfig | null {
     return searxngApiKey ? { engine: 'searxng', url, apiKey: searxngApiKey } : { engine: 'searxng', url }
   }
 
+  if (preferredEngine === 'camofox') {
+    const url = getCamofoxUrl()
+    if (!url) return null
+    return { engine: 'camofox', url }
+  }
+
   const tavilyKey = getTavilyApiKey()
   if (tavilyKey) return { engine: 'tavily', apiKey: tavilyKey }
 
@@ -61,7 +71,16 @@ function getActiveEngine(): EngineConfig | null {
       : { engine: 'searxng', url: searxngUrl }
   }
 
+  const camofoxUrl = getCamofoxUrl()
+  if (camofoxUrl) return { engine: 'camofox', url: camofoxUrl }
+
   return null
+}
+
+async function searchCamofox(query: string, maxResults: number, signal: AbortSignal): Promise<SearchResult[]> {
+  const ddg = `https://html.duckduckgo.com/html/?kl=fr-fr&q=${encodeURIComponent(query)}`
+  const snapshot = await camofoxSnapshot(ddg, signal)
+  return parseDuckduckgo(snapshot, maxResults).map((r) => ({ title: r.title, url: r.url, content: r.content }))
 }
 
 async function searchTavily(
@@ -132,7 +151,7 @@ export const webSearchTool = createTool<WebSearchArgs>(
     function: {
       name: 'web_search',
       description:
-        'Search the web using a configured search engine (Tavily or SearXNG). Returns a list of results with title, URL, and content snippet for each. Use this to find relevant web pages, then use web_fetch to retrieve full content.',
+        'Search the web using a configured search engine (Tavily, SearXNG, or camofox anti-bot browser via DuckDuckGo). Returns a list of results with title, URL, and content snippet for each. Use this to find relevant web pages, then use web_fetch to retrieve full content.',
       parameters: {
         type: 'object',
         properties: {
@@ -156,7 +175,7 @@ export const webSearchTool = createTool<WebSearchArgs>(
     const active = getActiveEngine()
     if (!active) {
       return helpers.error(
-        'web_search requires at least one search engine configured. Set the TAVILY_API_KEY environment variable, or configure SearXNG via SEARXNG_URL (and optionally SEARXNG_API_KEY). You can also configure these in Settings > Advanced > Search Engine.',
+        'web_search requires at least one search engine configured. Set TAVILY_API_KEY, or SEARXNG_URL (optionally SEARXNG_API_KEY), or CAMOFOX_URL (anti-bot browser, e.g. http://192.168.1.63:9377). You can also configure these in Settings > Advanced > Search Engine.',
       )
     }
 
@@ -167,6 +186,8 @@ export const webSearchTool = createTool<WebSearchArgs>(
 
       if (active.engine === 'tavily') {
         results = await searchTavily(query, maxResults, active.apiKey, signal)
+      } else if (active.engine === 'camofox') {
+        results = await searchCamofox(query, maxResults, signal)
       } else {
         const searxngConfig: { url: string; apiKey?: string } = { url: active.url }
         if (active.apiKey) searxngConfig.apiKey = active.apiKey

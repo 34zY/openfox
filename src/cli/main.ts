@@ -200,6 +200,9 @@ export async function runCli(options: { mode: Mode }): Promise<void> {
       service: { type: 'boolean' },
       follow: { type: 'boolean', short: 'f' },
       check: { type: 'boolean' },
+      json: { type: 'boolean' },
+      max: { type: 'string' },
+      format: { type: 'string' },
     },
     allowPositionals: true,
     strict: true,
@@ -264,6 +267,35 @@ export async function runCli(options: { mode: Mode }): Promise<void> {
       if (values.password) mcpOptions.password = values.password
       if (values.port) mcpOptions.port = parseInt(values.port)
       await runMcpCommand(mode, mcpOptions)
+      break
+    }
+    case 'search': {
+      const { runSearchCommand } = await import('./web-cli.js')
+      const query = positionals.slice(1).join(' ')
+      const opts: { json?: boolean; max?: number } = {}
+      if (values.json === true) opts.json = true
+      if (values.max) opts.max = parseInt(values.max)
+      const code = await runSearchCommand(query, opts)
+      process.exit(code)
+      break
+    }
+    case 'fetch': {
+      const { runFetchCommand } = await import('./web-cli.js')
+      const [, target] = positionals
+      const opts: { json?: boolean; format?: string } = {}
+      if (values.json === true) opts.json = true
+      if (values.format) opts.format = values.format
+      const code = await runFetchCommand(target, opts)
+      process.exit(code)
+      break
+    }
+    case 'run': {
+      const { runHeadlessTask } = await import('./run-headless.js')
+      const task = positionals.slice(1).join(' ')
+      const runOpts: { json?: boolean } = {}
+      if (values.json === true) runOpts.json = true
+      const code = await runHeadlessTask(task, mode, runOpts)
+      process.exit(code)
       break
     }
     case 'install': {

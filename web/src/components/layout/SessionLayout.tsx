@@ -31,6 +31,8 @@ export function SessionLayout({
     (state) => state.currentSession,
     null,
   )
+  const isChat = session?.mode === 'chat'
+  const effectiveCriteriaOpen = isChat ? false : criteriaSidebarOpen
 
   const { width: rightSidebarWidth, handleMouseDown: handleResizeMouseDown } = useResizable({
     initialWidth: 320,
@@ -46,7 +48,7 @@ export function SessionLayout({
   return (
     <div className="relative h-full overflow-hidden">
       {/* Backdrop - overlay mode only, when sidebar is open */}
-      {criteriaSidebarOpen && criteriaSidebarOverlay && (
+      {effectiveCriteriaOpen && criteriaSidebarOverlay && (
         <div className="absolute inset-0 bg-secondary/50 z-40" onClick={onCriteriaSidebarToggle} />
       )}
 
@@ -70,7 +72,7 @@ export function SessionLayout({
           /* Overlay sidebar - floats over the feed so it keeps its full width */
           <aside
             className={`bg-secondary transition-all duration-300 ease-in-out absolute right-0 top-0 h-full z-50 ${
-              criteriaSidebarOpen ? 'w-[320px] translate-x-0 border-l border-border' : 'w-[320px] translate-x-full'
+              effectiveCriteriaOpen ? 'w-[320px] translate-x-0 border-l border-border' : 'w-[320px] translate-x-full'
             }`}
           >
             <div className="h-full p-4">
@@ -79,7 +81,7 @@ export function SessionLayout({
               </ScrollArea>
             </div>
           </aside>
-        ) : criteriaSidebarOpen ? (
+        ) : effectiveCriteriaOpen ? (
           /* Inline sidebar - flex item sharing the row with the feed */
           <aside className="shrink-0 border-l border-border bg-secondary relative" style={{ width: rightSidebarWidth }}>
             <ResizeHandle side="left" onMouseDown={handleResizeMouseDown} />

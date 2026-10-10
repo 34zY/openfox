@@ -50,6 +50,8 @@ export const SETTINGS_KEYS = {
   SEARCH_TAVILY_API_KEY: 'search.tavilyApiKey',
   SEARCH_SEARXNG_URL: 'search.searxngUrl',
   SEARCH_SEARXNG_API_KEY: 'search.searxngApiKey',
+  SEARCH_CAMOFOX_URL: 'search.camofoxUrl',
+  TOOLS_USE_RTK: 'tools.useRtk',
   TOOLS_SHELL: 'tools.shell',
   CONFIRM_ON_WORKSPACE_ACTIONS: 'tools.confirmOnWorkspaceActions',
   FEATURES_PER_SESSION_MCP: 'features.perSessionMcp',

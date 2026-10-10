@@ -1,5 +1,6 @@
 import TurndownService from 'turndown'
 import { createTool, buildSignal } from './tool-helpers.js'
+import { getCamofoxUrl, camofoxSnapshot } from './camofox.js'
 import { OUTPUT_LIMITS } from './types.js'
 import { isPdfBuffer, extractPdfText, processPdfContent, formatPdfErrorMessage } from './pdf-utils.js'
 
@@ -101,14 +102,38 @@ export const webFetchTool = createTool<WebFetchArgs>(
       'Accept-Language': 'en-US,en;q=0.9',
     }
 
-    const initial = await fetch(url, { signal, headers })
+    // Fallback camofox (navigateur anti-bot) si le fetch simple echoue ou est bloque.
+    const fetchViaCamofox = async () => {
+      if (!getCamofoxUrl()) return null
+      try {
+        const snap = await camofoxSnapshot(url, signal)
+        if (!snap.trim()) return null
+        const out = snap.length > MAX_RESPONSE_SIZE ? snap.slice(0, MAX_RESPONSE_SIZE) : snap
+        return helpers.success(out, snap.length > MAX_RESPONSE_SIZE, { metadata: { url, via: 'camofox' } })
+      } catch {
+        return null
+      }
+    }
 
-    const response =
-      initial.status === 403 && initial.headers.get('cf-mitigated') === 'challenge'
-        ? await fetch(url, { signal, headers: { ...headers, 'User-Agent': 'openfox' } })
-        : initial
+    let response: Response
+    try {
+      const initial = await fetch(url, { signal, headers })
+      response =
+        initial.status === 403 && initial.headers.get('cf-mitigated') === 'challenge'
+          ? await fetch(url, { signal, headers: { ...headers, 'User-Agent': 'openfox' } })
+          : initial
+    } catch (err) {
+      const camo = await fetchViaCamofox()
+      if (camo) return camo
+      throw err
+    }
 
     if (!response.ok) {
+      // 403/429/503 = signaux typiques d'anti-bot -> camofox
+      if ([403, 429, 503].includes(response.status)) {
+        const camo = await fetchViaCamofox()
+        if (camo) return camo
+      }
       return helpers.error(`Request failed with status code: ${response.status}`)
     }
 
