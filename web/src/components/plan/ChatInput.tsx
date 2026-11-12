@@ -525,7 +525,16 @@ export function ChatInput({
       }
     }
 
-    sendMessage(input, attachments)
+    if (!sendMessage(input, attachments)) {
+      setErrorMessage(
+        t({
+          en: 'Message too long for the current model’s context window — shorten it or switch to a model with a larger window.',
+          fr: 'Message trop long pour la fenêtre de contexte du modèle actuel — raccourcis-le ou choisis un modèle avec une fenêtre plus grande.',
+        }),
+      )
+      sendingRef.current = false
+      return
+    }
     clearInput()
     sendingRef.current = false
   }

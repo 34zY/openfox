@@ -5,6 +5,7 @@ import { readAgents, readAllWorkflows, workflowResource } from '../lib/resources
 import { parseModelValue } from '../lib/model-value'
 import { shouldGateEffortChange, resolveWorkflowFirstAgentId } from '../lib/effort-gate'
 import { useEffortGateContext } from './useEffortGateContext'
+import { wouldOverflowContext } from '../lib/context-warning'
 import type { Attachment, WorkflowLaunchScope } from '@shared/types.js'
 
 function sessionWorkdir(sessionId: string | null | undefined): string | undefined {
@@ -21,15 +22,24 @@ export function useScrolledSend(setAutoScroll: (active: boolean) => void, sessio
   const storeLaunchWorkflow = useSessionStore((state) => state.launchWorkflow)
   const pinSessionEffort = useSessionStore((state) => state.pinSessionEffort)
   const clearSessionEffortPin = useSessionStore((state) => state.clearSessionEffortPin)
-  const { currentEffort, warmCache, gate } = useEffortGateContext(sessionId)
+  const { currentEffort, warmCache, gate, effectiveModelConfig } = useEffortGateContext(sessionId)
 
   const sendMessage = useCallback(
-    (content: string, attachments?: Attachment[], opts?: { messageKind?: 'command'; isSystemGenerated?: boolean }) => {
+    (
+      content: string,
+      attachments?: Attachment[],
+      opts?: { messageKind?: 'command'; isSystemGenerated?: boolean },
+    ): boolean => {
+      if (!sessionId) return false
+      // A single paste that alone exceeds the model's window can never
+      // succeed — retrying only burns the provider for minutes before
+      // failing anyway. Refuse locally so the caller can tell the user why.
+      if (wouldOverflowContext(content, effectiveModelConfig?.contextWindow)) return false
       setAutoScroll(true)
-      if (!sessionId) return
       storeSendMessage(sessionId, content, attachments, opts)
+      return true
     },
-    [setAutoScroll, storeSendMessage, sessionId],
+    [setAutoScroll, storeSendMessage, sessionId, effectiveModelConfig],
   )
 
   const launchWorkflow = useCallback(

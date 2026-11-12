@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useSessionStore } from '../../stores/session'
 import { useT } from '../../hooks/useT'
 import { DropdownMenu, type DropdownMenuItem } from '../shared/DropdownMenu'
-import { ChevronDownIcon, PlusIcon, CheckIcon, StarIcon, StarFilledIcon } from '../shared/icons'
+import { ChevronDownIcon, PlusIcon, CheckIcon, StarIcon, StarFilledIcon, TrashIcon } from '../shared/icons'
 import { groupSessionsByDate, formatDateHeader, formatTime } from '../../lib/format-date'
 import { trimContent } from '../../lib/cross-session-history'
 import type { SessionSummary } from '@shared/types.js'
@@ -25,11 +25,26 @@ export function SessionDropdown({
   const t = useT()
   const loadSession = useSessionStore((state) => state.loadSession)
   const toggleFavorite = useSessionStore((state) => state.toggleFavorite)
+  const deleteSession = useSessionStore((state) => state.deleteSession)
   const MAX_TITLE_LEN = 50
 
   const projectSessions = sessions.filter((session) => session.projectId === currentProject.id).slice(0, 15)
   const favoriteSessions = projectSessions.filter((s) => s.isFavorite)
   const otherSessions = projectSessions.filter((s) => !s.isFavorite)
+
+  const handleDeleteSession = (session: SessionSummary, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
+    const title = session.title ?? session.id.slice(0, 8)
+    const confirmed = window.confirm(
+      t({
+        en: `Delete session "${title}"? This cannot be undone.`,
+        fr: `Supprimer la session « ${title} » ? Action irréversible.`,
+      }),
+    )
+    if (!confirmed) return
+    deleteSession(session.id)
+  }
 
   const items: DropdownMenuItem[] = useMemo(() => {
     const result: DropdownMenuItem[] = []
@@ -61,21 +76,30 @@ export function SessionDropdown({
           loadSession(session.id)
         },
         labelAction: (
-          <button
-            onClick={() => toggleFavorite(session.id, !session.isFavorite)}
-            className="flex-shrink-0 p-1 hover:bg-bg-tertiary rounded transition-colors"
-            title={
-              session.isFavorite
-                ? t({ en: 'Unfavorite session', fr: 'Retirer des favoris' })
-                : t({ en: 'Favorite session', fr: 'Ajouter aux favoris' })
-            }
-          >
-            {session.isFavorite ? (
-              <StarFilledIcon className="w-3.5 h-3.5 text-yellow-500" />
-            ) : (
-              <StarIcon className="w-3.5 h-3.5 text-text-muted hover:text-yellow-500" />
-            )}
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => toggleFavorite(session.id, !session.isFavorite)}
+              className="flex-shrink-0 p-1 hover:bg-bg-tertiary rounded transition-colors"
+              title={
+                session.isFavorite
+                  ? t({ en: 'Unfavorite session', fr: 'Retirer des favoris' })
+                  : t({ en: 'Favorite session', fr: 'Ajouter aux favoris' })
+              }
+            >
+              {session.isFavorite ? (
+                <StarFilledIcon className="w-3.5 h-3.5 text-yellow-500" />
+              ) : (
+                <StarIcon className="w-3.5 h-3.5 text-text-muted hover:text-yellow-500" />
+              )}
+            </button>
+            <button
+              onClick={(e) => handleDeleteSession(session, e)}
+              className="flex-shrink-0 p-1 hover:bg-bg-tertiary rounded transition-colors"
+              title={t({ en: 'Delete session', fr: 'Supprimer la session' })}
+            >
+              <TrashIcon className="w-3.5 h-3.5 text-text-muted hover:text-red-500" />
+            </button>
+          </div>
         ),
       })
     }

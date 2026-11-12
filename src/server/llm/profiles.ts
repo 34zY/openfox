@@ -50,6 +50,16 @@ const MOCK_PROFILE: ModelProfile = {
  */
 const MODEL_PROFILES: Array<{ pattern: string; profile: ModelProfile }> = [
   {
+    pattern: 'gufo',
+    profile: {
+      name: 'Gufo (local text-only)',
+      temperature: 0.7,
+      topP: 0.9,
+      defaultMaxTokens: 16384,
+      supportsVision: false,
+    },
+  },
+  {
     pattern: 'mistral',
     profile: {
       name: 'Mistral',

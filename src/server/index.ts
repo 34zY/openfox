@@ -10,7 +10,7 @@ import type { Config, ModelConfig, ProviderBackend } from '../shared/types.js'
 import type { ServerHandle } from './context.js'
 import type { VisionBackend } from './llm/vision-fallback.js'
 import { initDatabase } from './db/index.js'
-import { getProject, deleteProject } from './db/projects.js'
+import { getProject, deleteProject, getProjectByWorkdir } from './db/projects.js'
 import { initEventStore, getEventStore, combineEventsWithSnapshot } from './events/index.js'
 import { buildMessagesFromStoredEvents } from './events/folding.js'
 import { provideAnswer, getPendingQuestionsForSession } from './tools/ask.js'
@@ -427,6 +427,25 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
     const { listProjects } = await import('./db/projects.js')
     const projects = listProjects()
     res.json({ projects })
+  })
+
+  // Quick-chat: idempotent default project with no manual folder picker.
+  app.post('/api/projects/scratch', async (_req, res) => {
+    const { homedir } = await import('node:os')
+    const { join } = await import('node:path')
+    const scratchWorkdir = join(homedir(), '.openfox', 'chat')
+    const existing = getProjectByWorkdir(scratchWorkdir)
+    if (existing) {
+      return res.json({ project: existing })
+    }
+    const { createProjectDirectory } = await import('./utils/project-creator.js')
+    try {
+      const project = await createProjectDirectory('Chat', scratchWorkdir, false)
+      res.status(201).json({ project })
+    } catch (err) {
+      const e = err as Error & { code?: string }
+      return res.status(500).json({ error: e.message || 'Unknown error', code: e.code || 'UNKNOWN' })
+    }
   })
 
   app.post('/api/projects', async (req, res) => {

@@ -10,6 +10,7 @@ import { useT } from '../hooks/useT'
 import { SETTINGS_KEYS, summariesResource } from '../lib/resources'
 import { Button } from './shared/Button'
 import { OpenProjectModal } from './CreateSessionModal'
+import { authFetch } from '../lib/api'
 import { DeleteProjectConfirmationModal } from './DeleteProjectConfirmationModal'
 import { formatRelativeDate } from '../lib/format-date'
 import { sortProjectsStarredFirst } from '../lib/projects'
@@ -268,6 +269,13 @@ export function HomePage() {
   // alphabetical within each group.
   const sortedProjects = useMemo(() => sortProjectsStarredFirst(projects), [projects])
 
+  const handleQuickChat = async () => {
+    const res = await authFetch('/api/projects/scratch', { method: 'POST' })
+    if (!res.ok) return
+    const { project } = await res.json()
+    navigate(`/p/${project.id}/new`)
+  }
+
   const handleOpenProject = () => {
     setShowOpenModal(true)
   }
@@ -472,6 +480,9 @@ export function HomePage() {
               <ColumnsIcon className="w-4 h-4" />
               {t({ en: 'Open split view', fr: 'Ouvrir la vue divisée' })}
             </Link>
+            <Button variant="secondary" onClick={handleQuickChat}>
+              {t({ en: 'Quick chat', fr: 'Chat rapide' })}
+            </Button>
             <Button variant="primary" onClick={handleOpenProject}>
               {t({ en: 'Open Project', fr: 'Ouvrir un projet' })}
             </Button>

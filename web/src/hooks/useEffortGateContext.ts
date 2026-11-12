@@ -99,6 +99,7 @@ export function useEffortGateContext(explicitSessionId?: string | null | undefin
     warmCache: contextState?.warmCache,
     gate,
     modelOverrides,
+    effectiveModelConfig,
   }
 }
 
