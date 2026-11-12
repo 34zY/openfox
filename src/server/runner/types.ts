@@ -89,10 +89,14 @@ export interface LLMRetryPolicy {
 }
 
 export const DEFAULT_LLM_RETRY_POLICY: LLMRetryPolicy = {
-  backoffMs: [1000, 5000, 30_000],
-  minIntervalMs: 60_000,
-  maxDurationMs: 30 * 60_000,
-  maxAttempts: 40,
+  // Bounded retry: a transient blip gets a few escalating retries, but a
+  // backend overload/timeout (e.g. box under memory pressure) fails fast and
+  // surfaces to the user instead of a 40x/30min storm that re-prefills and
+  // piles more load onto an already-saturated server.
+  backoffMs: [1000, 5000, 15_000],
+  minIntervalMs: 30_000,
+  maxDurationMs: 5 * 60_000,
+  maxAttempts: 5,
 }
 
 // ============================================================================

@@ -42,6 +42,14 @@ describe('isContextLengthError', () => {
     expect(isContextLengthError('context_length is too long')).toBe(true)
   })
 
+  it('detects llama.cpp’s "context size" phrasing (production incident, 2026-10-10)', () => {
+    expect(
+      isContextLengthError(
+        'LLMError: HTTP 400: {"error":{"code":400,"message":"request (171948 tokens) exceeds the available context size (131072 tokens), try increasing it","type":"exceed_context_size_error","n_prompt_tokens":171948,"n_ctx":131072}}',
+      ),
+    ).toBe(true)
+  })
+
   it('detects prompt-too-long framing', () => {
     expect(isContextLengthError('Prompt is too long (12345 tokens > 8192 tokens)')).toBe(true)
   })

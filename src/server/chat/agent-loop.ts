@@ -535,6 +535,20 @@ export async function runTopLevelAgentLoop(
         continue
       }
 
+      // Context overflow survived MAX_CONTEXT_LENGTH_RETRIES halvings: the
+      // prompt itself (not the completion budget) exceeds the window, so no
+      // amount of further retrying — immediate or backed-off — can ever
+      // succeed. Fail fast instead of burning the generic backoff policy on
+      // a deterministically-doomed request (seen looping ~15x over 4min on
+      // a single oversized paste before this fix).
+      if (isContextLengthError(attemptResult.error)) {
+        if (!config.subAgentMetadata) {
+          recordLLMFailure(sessionId)
+          config.onMessage?.(createChatLLMRetryFailedMessage(attemptResult.error, requestFailures + 1))
+        }
+        return { failed: { error: attemptResult.error } }
+      }
+
       // Backoff decision — the shared LLMRetryPolicy (same defaults as workflows).
       requestFailures += 1
       if (requestFirstFailureAt === 0) {

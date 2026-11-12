@@ -1821,6 +1821,80 @@ describe('maxTokens clamping', () => {
     expect(calls[3]?.[0].modelSettings?.maxTokens).toBe(2048)
   })
 
+  it('does not fall through to the generic backoff policy once context-length retries are exhausted', async () => {
+    // Regression test: a prompt that overflows the window by itself (not just
+    // the completion budget) can never be fixed by halving maxTokens, so once
+    // MAX_CONTEXT_LENGTH_RETRIES is exhausted the loop must give up — even
+    // when the generic retry policy would otherwise allow many more attempts.
+    // Before the fix, this fell through to evaluateLLMRetry and kept retrying
+    // the identical doomed request for the policy's full budget (observed in
+    // production: ~15 retries over ~4 minutes on a single oversized paste).
+    mockSessionManager = {
+      enterPauseGate: vi.fn().mockResolvedValue('released'),
+      requireSession: vi.fn().mockReturnValue({
+        workdir: '/test',
+        projectId: 'test-project',
+        executionState: null,
+        criteria: [],
+        isRunning: false,
+      }),
+      getEffectiveWorkdir: vi.fn().mockReturnValue('/test'),
+      getProjectWorkdir: vi.fn().mockReturnValue('/test'),
+      getContextState: vi.fn().mockReturnValue({
+        currentTokens: 0,
+        maxTokens: 200000,
+        compactionCount: 0,
+        dangerZone: false,
+        canCompact: false,
+        dynamicContextChanged: false,
+      }),
+      getCurrentModelContext: vi.fn().mockReturnValue(200000),
+      getCurrentModelSettings: vi.fn().mockReturnValue({ maxTokens: 16384 }),
+      getModelCompactionThreshold: vi.fn().mockReturnValue(1.0),
+      setCurrentContextSize: vi.fn(),
+      getDynamicContextChanged: vi.fn().mockReturnValue(false),
+      setDynamicContextChanged: vi.fn(),
+      getCachedPrompt: vi.fn().mockReturnValue(undefined),
+      setCachedPrompt: vi.fn(),
+      getLspManager: vi.fn(),
+      drainAsapMessages: vi.fn().mockReturnValue([]),
+      getCurrentWindowMessages: vi.fn().mockReturnValue([]),
+      updateMessage: vi.fn(),
+    } as any
+
+    const contextError =
+      "HTTP 400: This model's maximum context length is 128000 tokens. However, you requested 250000 tokens."
+    const failingAttempt = {
+      content: '',
+      toolCalls: [],
+      segments: [],
+      usage: { promptTokens: 0, completionTokens: 0 },
+      timing: { ttft: 0, completionTime: 0, tps: 0, prefillTps: 0 },
+      aborted: false,
+      finishReason: 'stop',
+      modelParams: {},
+      error: contextError,
+    }
+    // Exactly 4 failures queued (1 initial + 3 halvings) — the fix must stop
+    // there on its own. A lenient generic policy allowing far more attempts
+    // (maxAttempts: 10 below) proves it isn't the policy stopping it.
+    ;(consumeStreamGenerator as any)
+      .mockResolvedValueOnce(failingAttempt)
+      .mockResolvedValueOnce(failingAttempt)
+      .mockResolvedValueOnce(failingAttempt)
+      .mockResolvedValueOnce(failingAttempt)
+
+    await runTopLevelAgentLoop(
+      makeConfig({
+        llmRetryPolicy: { backoffMs: [0, 0, 0], minIntervalMs: 0, maxDurationMs: 300_000, maxAttempts: 10 },
+      }),
+      mockTurnMetrics,
+    ).catch(() => {})
+
+    const calls = (streamLLMPure as any).mock.calls
+    expect(calls.length).toBe(4)
+  })
+
   it('applies the context-length halving even when config.modelSettings is set', async () => {
     mockSessionManager = {
       enterPauseGate: vi.fn().mockResolvedValue('released'),
