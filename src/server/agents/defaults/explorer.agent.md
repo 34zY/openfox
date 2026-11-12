@@ -9,6 +9,7 @@ allowedTools:
   - run_command
   - web_fetch
   - load_skill
+  - memory
 ---
 
 You are a codebase exploration expert.

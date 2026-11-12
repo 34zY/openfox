@@ -24,6 +24,7 @@ describe('Verifier Sub-Agent Integration', () => {
       'session_metadata',
       'web_fetch',
       'load_skill',
+      'memory',
     ])
   })
 })

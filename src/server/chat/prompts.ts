@@ -4,6 +4,7 @@ import type { AgentDefinition } from '../agents/types.js'
 import { computeEffectiveTools } from '../tools/tool-policy.js'
 import { getPlatformShell } from '../utils/platform.js'
 import { getSetting, SETTINGS_KEYS } from '../db/settings.js'
+import { listRecentMemories, type MemoryRecord } from '../db/memory.js'
 
 // ============================================================================
 // Optional "caveman thinking" section (opt-in via llm.cavemanThinking)
@@ -56,7 +57,9 @@ export function buildBasePrompt(
   customInstructions?: string,
   skills?: SkillMetadata[],
   modelName?: string,
+  projectId?: string | null,
 ): string {
+  const memories = listRecentMemories({ projectId: projectId ?? null })
   const instructionsSection = customInstructions ? `\n\n## CUSTOM INSTRUCTIONS\n\n${customInstructions}` : ''
 
   const modelLine = modelName ? `\nModel: ${modelName}` : ''
@@ -162,6 +165,7 @@ If working on OpenFox itself, repo: https://github.com/co-l/openfox
 
 ${instructionsSection}
 ${buildSkillsSection(skills)}
+${buildMemorySection(memories)}
 `
 }
 
@@ -182,6 +186,22 @@ You can load specialized knowledge using the load_skill tool. Only load a skill 
 ${listing}
 
 To load a skill, call load_skill with the skill ID. The skill's detailed instructions will be returned as a tool result.
+`
+}
+
+function buildMemorySection(memories: MemoryRecord[]): string {
+  if (!memories || memories.length === 0) return ''
+
+  const listing = memories.map((m) => `- [${m.type}] ${m.text}`).join('\n')
+
+  return `
+## MEMORY
+
+Facts and corrections from past sessions, most recent first. Treat these as ground truth unless
+directly contradicted by what you observe right now in this session — if something changed, use
+the memory tool (action: forget) to remove the stale entry.
+
+${listing}
 `
 }
 
@@ -227,8 +247,9 @@ export function buildTopLevelSystemPrompt(
   skills?: SkillMetadata[],
   subAgentDefs?: AgentDefinition[],
   modelName?: string,
+  projectId?: string | null,
 ): string {
-  const base = buildBasePrompt(workdir, customInstructions, skills, modelName)
+  const base = buildBasePrompt(workdir, customInstructions, skills, modelName, projectId)
   const subAgents = subAgentDefs ? buildSubAgentsSection(subAgentDefs) : ''
   return base + subAgents
 }
@@ -242,8 +263,9 @@ export function buildSubAgentSystemPrompt(
   agentDef: AgentDefinition,
   skills?: SkillMetadata[],
   modelName?: string,
+  projectId?: string | null,
 ): string {
-  const base = buildBasePrompt(workdir, undefined, skills, modelName)
+  const base = buildBasePrompt(workdir, undefined, skills, modelName, projectId)
   return base + '\n\n' + agentDef.prompt
 }
 

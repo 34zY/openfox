@@ -305,7 +305,13 @@ export async function executeSubAgent(options: SubAgentExecutionOptions): Promis
   const gitignoreSection = hasRunCommand ? await loadGitIgnoreRules(effectiveWorkdir) : ''
 
   const systemPrompt =
-    buildBasePrompt(effectiveWorkdir, undefined, skills.length > 0 ? skills : undefined, llmClient.getModel()) +
+    buildBasePrompt(
+      effectiveWorkdir,
+      undefined,
+      skills.length > 0 ? skills : undefined,
+      llmClient.getModel(),
+      session.projectId,
+    ) +
     '\n\n' +
     agentDef.prompt +
     (gitignoreSection ? '\n\n' + gitignoreSection : '') +

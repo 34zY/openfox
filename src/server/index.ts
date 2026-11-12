@@ -45,6 +45,7 @@ import { clearSessionsForDeletedProvider, reconcileSessionProviders } from './se
 import { toClientSession } from './session/client-session.js'
 import { setRuntimeConfig } from './runtime-config.js'
 import { createSkillRoutes } from './routes/skills.js'
+import { createMemoryRoutes } from './routes/memory.js'
 import { createCommandRoutes } from './routes/commands.js'
 import { createAgentRoutes } from './routes/agents.js'
 import { loadAllAgentsDefault, getTopLevelAgents } from './agents/registry.js'
@@ -3421,6 +3422,7 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
       (p) => p.workdir === config.workdir || (config.workdir && p.workdir.startsWith(config.workdir + '/')),
     )?.workdir ?? config.workdir
   app.use('/api/skills', createSkillRoutes(configDir, projectDir))
+  app.use('/api/memory', createMemoryRoutes())
   app.use('/api/commands', createCommandRoutes(configDir, projectDir))
   app.use('/api/agents', createAgentRoutes(configDir, projectDir))
   app.use('/api/workflows', createWorkflowRoutes(configDir, config, projectDir))

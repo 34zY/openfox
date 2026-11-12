@@ -531,6 +531,7 @@ describe('SubAgentManager', () => {
       'session_metadata',
       'web_fetch',
       'load_skill',
+      'memory',
     ])
 
     expect(findAgentById('code_reviewer', agents)?.metadata.allowedTools).toEqual([
@@ -539,6 +540,7 @@ describe('SubAgentManager', () => {
       'web_fetch',
       'session_metadata',
       'load_skill',
+      'memory',
     ])
 
     expect(findAgentById('explorer', agents)?.metadata.allowedTools).toEqual([
@@ -546,6 +548,7 @@ describe('SubAgentManager', () => {
       'run_command',
       'web_fetch',
       'load_skill',
+      'memory',
     ])
   })
 

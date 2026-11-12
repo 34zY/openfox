@@ -479,7 +479,14 @@ export async function injectContextDriftReminders(
         instructionContent: instructionContent ?? '',
         skills,
         buildNewSystemPrompt: () =>
-          buildTopLevelSystemPrompt(session.workdir, instructionContent || undefined, skills, subAgentDefs, modelName),
+          buildTopLevelSystemPrompt(
+            session.workdir,
+            instructionContent || undefined,
+            skills,
+            subAgentDefs,
+            modelName,
+            session.projectId,
+          ),
       },
       append ?? createEventStoreAppend(sessionId),
     )
@@ -571,6 +578,7 @@ export async function buildCachedPrompt(
     skills,
     subAgentDefs,
     modelName,
+    session.projectId,
   )
 
   const hash = computeDynamicContextHash(instructionContent, skills, toolFingerprint, modelName)

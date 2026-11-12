@@ -10,6 +10,7 @@ allowedTools:
   - web_fetch
   - session_metadata
   - load_skill
+  - memory
 ---
 
 You are a code reviewer. Review the **git diff** of the modified files rather than reading the full files.

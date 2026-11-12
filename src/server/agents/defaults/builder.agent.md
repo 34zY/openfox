@@ -16,6 +16,7 @@ allowedTools:
   - session_metadata
   - call_sub_agent
   - load_skill
+  - memory
   - dev_server
   - background_process
   - mcp_config

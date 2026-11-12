@@ -496,5 +496,44 @@ function runMigrations(db: Database.Database): void {
     )
   `)
 
+  // Create memories table (persistent cross-session facts/corrections, see tools/memory.ts)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS memories (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      scope TEXT NOT NULL DEFAULT 'global',
+      project_id TEXT,
+      text TEXT NOT NULL,
+      tags TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+  `)
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_memories_scope ON memories(scope, project_id)`)
+
+  db.exec(`
+    CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
+      text, tags, content='memories', content_rowid='rowid'
+    )
+  `)
+
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories BEGIN
+      INSERT INTO memories_fts(rowid, text, tags) VALUES (new.rowid, new.text, new.tags);
+    END
+  `)
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories BEGIN
+      INSERT INTO memories_fts(memories_fts, rowid, text, tags) VALUES ('delete', old.rowid, old.text, old.tags);
+    END
+  `)
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
+      INSERT INTO memories_fts(memories_fts, rowid, text, tags) VALUES ('delete', old.rowid, old.text, old.tags);
+      INSERT INTO memories_fts(rowid, text, tags) VALUES (new.rowid, new.text, new.tags);
+    END
+  `)
+
   logger.info('Database migrations completed')
 }

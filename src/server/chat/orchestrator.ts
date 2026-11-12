@@ -435,6 +435,7 @@ export async function runAgentTurn(
             skills,
             getSubAgents(allAgents),
             modelName,
+            session.projectId,
           ),
       },
       append,

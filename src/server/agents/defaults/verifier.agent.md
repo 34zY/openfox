@@ -10,6 +10,7 @@ allowedTools:
   - session_metadata
   - web_fetch
   - load_skill
+  - memory
 ---
 
 You are a code reviewer performing independent verification.

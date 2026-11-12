@@ -12,6 +12,8 @@ const { getSettingMock } = vi.hoisted(() => ({
   getSettingMock: vi.fn<(key: string) => string | null>(() => null),
 }))
 
+vi.mock('../db/memory.js', () => ({ listRecentMemories: () => [] }))
+
 vi.mock('../db/settings.js', () => ({
   getSetting: getSettingMock,
   SETTINGS_KEYS: { CAVEMAN_THINKING: 'llm.cavemanThinking' },
