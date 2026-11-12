@@ -10,6 +10,7 @@ allowedTools:
   - web_fetch
   - session_metadata
   - load_skill
+  - search_skills
   - memory
 ---
 

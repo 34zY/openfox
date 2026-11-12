@@ -12,6 +12,7 @@ import { PathAccessDeniedError } from './path-security.js'
 import { sessionMetadataTool } from './session-metadata.js'
 import { callSubAgentTool } from './sub-agent.js'
 import { loadSkillTool } from './load-skill.js'
+import { searchSkillsTool } from './search-skills.js'
 import { memoryTool } from './memory.js'
 import { returnValueTool } from './return-value.js'
 import { webFetchTool } from './web-fetch.js'
@@ -52,6 +53,7 @@ function getBuiltInTools(): Tool[] {
       sessionMetadataTool,
       callSubAgentTool,
       loadSkillTool,
+      searchSkillsTool,
       memoryTool,
       returnValueTool,
       webFetchTool,

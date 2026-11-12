@@ -531,6 +531,7 @@ describe('SubAgentManager', () => {
       'session_metadata',
       'web_fetch',
       'load_skill',
+      'search_skills',
       'memory',
     ])
 
@@ -540,6 +541,7 @@ describe('SubAgentManager', () => {
       'web_fetch',
       'session_metadata',
       'load_skill',
+      'search_skills',
       'memory',
     ])
 
@@ -548,6 +550,7 @@ describe('SubAgentManager', () => {
       'run_command',
       'web_fetch',
       'load_skill',
+      'search_skills',
       'memory',
     ])
   })

@@ -59,6 +59,7 @@ describe('loadDefaultAgents', () => {
       'session_metadata',
       'web_fetch',
       'load_skill',
+      'search_skills',
       'memory',
     ])
     expect(verifier.prompt).toContain('independent verification')

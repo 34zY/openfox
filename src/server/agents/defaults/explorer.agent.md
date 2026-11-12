@@ -9,6 +9,7 @@ allowedTools:
   - run_command
   - web_fetch
   - load_skill
+  - search_skills
   - memory
 ---
 

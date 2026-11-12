@@ -25,6 +25,7 @@ describe('SubAgentRegistry (via agent registry)', () => {
       'session_metadata',
       'web_fetch',
       'load_skill',
+      'search_skills',
       'memory',
     ])
     expect(verifier?.metadata.subagent).toBe(true)
@@ -45,6 +46,7 @@ describe('SubAgentRegistry (via agent registry)', () => {
       'web_fetch',
       'session_metadata',
       'load_skill',
+      'search_skills',
       'memory',
     ])
     expect(codeReviewer?.metadata.subagent).toBe(true)
@@ -59,7 +61,14 @@ describe('SubAgentRegistry (via agent registry)', () => {
     expect(explorer?.metadata.name).toBe('Explorer')
     expect(typeof explorer?.metadata.description).toBe('string')
     expect(typeof explorer?.prompt).toBe('string')
-    expect(explorer?.metadata.allowedTools).toEqual(['read_file', 'run_command', 'web_fetch', 'load_skill', 'memory'])
+    expect(explorer?.metadata.allowedTools).toEqual([
+      'read_file',
+      'run_command',
+      'web_fetch',
+      'load_skill',
+      'search_skills',
+      'memory',
+    ])
     expect(explorer?.metadata.subagent).toBe(true)
   })
 

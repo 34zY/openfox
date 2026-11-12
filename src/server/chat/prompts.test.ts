@@ -92,7 +92,7 @@ describe('buildBasePrompt', () => {
     const prompt = buildBasePrompt('/tmp', undefined, [
       { id: 'playwright', name: 'Playwright', description: 'Browser automation', version: '1.0' },
     ])
-    expect(prompt).toContain('AVAILABLE SKILLS')
+    expect(prompt).toContain('## SKILLS')
     expect(prompt).toContain('playwright')
   })
 

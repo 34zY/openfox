@@ -174,15 +174,21 @@ ${buildMemorySection(memories)}
 // ============================================================================
 
 function buildSkillsSection(skills?: SkillMetadata[]): string {
-  if (!skills || skills.length === 0) return ''
-
-  const listing = skills.map((s, i) => `${i + 1}. **${s.id}** - ${s.description}`).join('\n')
+  const listing =
+    skills && skills.length > 0
+      ? skills.map((s, i) => `${i + 1}. **${s.id}** - ${s.description}`).join('\n')
+      : '(none pre-enabled right now)'
 
   return `
-## AVAILABLE SKILLS
+## SKILLS
 
-You can load specialized knowledge using the load_skill tool. Only load a skill when you need its instructions for the current task.
+A larger skill library exists beyond the pre-enabled list below. Before attempting a task that touches
+an unfamiliar API, file format, or workflow, call search_skills with a keyword query to check the library
+first — do this instead of guessing or skipping. Only call load_skill with an id returned by search_skills
+or listed below; never guess a skill id blind. Load at most one skill per distinct need — never stack two
+skills that cover the same ground, and never reload a skill already loaded earlier in this session.
 
+Pre-enabled:
 ${listing}
 
 To load a skill, call load_skill with the skill ID. The skill's detailed instructions will be returned as a tool result.

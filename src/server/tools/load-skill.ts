@@ -6,7 +6,7 @@
 
 import type { ToolResult } from './types.js'
 import { createTool, type ToolHandler } from './tool-helpers.js'
-import { loadAllSkills, findSkillById, isSkillEnabled } from '../skills/registry.js'
+import { loadAllSkills, findSkillById, isSkillEnabled, setSkillEnabled } from '../skills/registry.js'
 import { getRuntimeConfig } from '../runtime-config.js'
 import { getGlobalConfigDir } from '../../cli/paths.js'
 import type { SkillDefinition } from '../skills/types.js'
@@ -27,8 +27,11 @@ const handler: ToolHandler<LoadSkillArgs> = async (args, context, helpers): Prom
     return helpers.error('Missing required parameter: skillId')
   }
 
+  // Skills are disabled by default to keep the system prompt cheap; search_skills surfaces
+  // them by id and the model loads on demand. First real use promotes a skill to enabled so
+  // it shows up in the AVAILABLE SKILLS list for the rest of the session.
   if (!isSkillEnabled(skillId)) {
-    return helpers.error(`Skill "${skillId}" is not enabled.`)
+    setSkillEnabled(skillId, true)
   }
 
   const config = getRuntimeConfig()
