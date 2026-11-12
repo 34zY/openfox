@@ -385,6 +385,8 @@ export interface ChatPathConfirmationPayload {
   paths: string[] // The paths requiring confirmation
   workdir: string // For context in UI
   reason: PathConfirmationReason // Why confirmation is needed
+  // Advisory-only exec_danger hint from d3-mini, shell commands only. Never gates.
+  d3MiniHint?: { choice: string; confidence?: number } | undefined
 }
 
 // Client payload for path confirmation response

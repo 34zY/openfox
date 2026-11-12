@@ -8,6 +8,7 @@ import { requestPathAccess, PathAccessDeniedError, registerPathConfirmation } fr
 import { AskUserInterrupt } from './ask.js'
 import { createChatPathConfirmationMessage } from '../ws/protocol.js'
 import { getEventStore } from '../events/index.js'
+import { getD3MiniDangerHint } from './d3mini-hint.js'
 
 /**
  * Counter for generating unique confirmation callIds within a single tool invocation.
@@ -74,7 +75,12 @@ export type ToolHandler<TArgs> = (args: TArgs, context: ToolContext, helpers: To
  * If context provides a signal (e.g. user cancel), the returned signal
  * triggers on whichever fires first.
  */
-export async function requestUserConfirmation(context: ToolContext, toolLabel: string, desc: string): Promise<boolean> {
+export async function requestUserConfirmation(
+  context: ToolContext,
+  toolLabel: string,
+  desc: string,
+  rawCommand?: string,
+): Promise<boolean> {
   // In dangerous mode, auto-approve all shell guard confirmations
   if (context.dangerLevel === 'dangerous') return Promise.resolve(true)
   // Night mode (normal danger level): no one is home — fail closed, same as sub-agents
@@ -100,12 +106,22 @@ export async function requestUserConfirmation(context: ToolContext, toolLabel: s
   // Fall back to a fresh UUID if no toolCallId is available.
   const seq = ++confirmationSeqCounter
   const callId = context.toolCallId ? `${context.toolCallId}-${seq}` : randomUUID()
+  // Advisory-only d3-mini exec_danger hint (never gates — see d3mini-hint.ts).
+  // Only meaningful for actual shell commands (toolLabel 'command'), not workspace actions.
+  const d3MiniHint = toolLabel === 'command' && rawCommand ? await getD3MiniDangerHint(rawCommand) : undefined
   // Persist to EventStore so the confirmation survives navigation/reload
   try {
     const eventStore = getEventStore()
     eventStore.append(context.sessionId, {
       type: 'path.confirmation_pending',
-      data: { callId, tool: toolLabel, paths: [desc], workdir: context.workdir, reason: 'dangerous_command' },
+      data: {
+        callId,
+        tool: toolLabel,
+        paths: [desc],
+        workdir: context.workdir,
+        reason: 'dangerous_command',
+        d3MiniHint,
+      },
     })
   } catch {
     // Event store not available (tests, early init)
@@ -118,9 +134,10 @@ export async function requestUserConfirmation(context: ToolContext, toolLabel: s
     toolLabel,
     context.workdir,
     'dangerous_command',
+    d3MiniHint,
   )
   ;(context.onEvent as (msg: unknown) => void)(
-    createChatPathConfirmationMessage(callId, toolLabel, [desc], context.workdir, 'dangerous_command'),
+    createChatPathConfirmationMessage(callId, toolLabel, [desc], context.workdir, 'dangerous_command', d3MiniHint),
   )
   return promise
 }

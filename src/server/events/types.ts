@@ -394,6 +394,7 @@ export type TurnEvent =
         paths: string[]
         workdir: string
         reason: 'outside_workdir' | 'sensitive_file' | 'both' | 'dangerous_command' | 'git_no_verify'
+        d3MiniHint?: { choice: string; confidence?: number } | undefined
       }
     }
   | {

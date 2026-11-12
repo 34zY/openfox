@@ -333,8 +333,9 @@ export function createChatPathConfirmationMessage(
   paths: string[],
   workdir: string,
   reason: ChatPathConfirmationPayload['reason'],
+  d3MiniHint?: ChatPathConfirmationPayload['d3MiniHint'],
 ): ServerMessage<ChatPathConfirmationPayload> {
-  return createServerMessage('chat.path_confirmation', { callId, tool, paths, workdir, reason })
+  return createServerMessage('chat.path_confirmation', { callId, tool, paths, workdir, reason, d3MiniHint })
 }
 
 // Ask user messages

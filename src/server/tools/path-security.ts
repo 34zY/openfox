@@ -1573,6 +1573,12 @@ export class PathAccessDeniedError extends Error {
 // Confirmation State Management
 // ===========================================================================
 
+/** Advisory-only exec_danger hint from d3-mini (see tools/d3mini-hint.ts). Never gates. */
+export interface D3MiniHint {
+  choice: string
+  confidence?: number
+}
+
 /** Pending path confirmations, keyed by callId */
 const pendingConfirmations = new Map<
   string,
@@ -1584,6 +1590,7 @@ const pendingConfirmations = new Map<
     tool: string
     workdir: string
     reason: 'outside_workdir' | 'sensitive_file' | 'both' | 'dangerous_command' | 'git_no_verify'
+    d3MiniHint?: D3MiniHint | undefined
   }
 >()
 
@@ -1598,9 +1605,10 @@ export function registerPathConfirmation(
   tool: string,
   workdir: string,
   reason: 'outside_workdir' | 'sensitive_file' | 'both' | 'dangerous_command' | 'git_no_verify',
+  d3MiniHint?: D3MiniHint,
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    pendingConfirmations.set(callId, { resolve, reject, paths, sessionId, tool, workdir, reason })
+    pendingConfirmations.set(callId, { resolve, reject, paths, sessionId, tool, workdir, reason, d3MiniHint })
   })
 }
 
@@ -1751,6 +1759,7 @@ export function getPendingConfirmationsBySession(): Record<
     paths: string[]
     workdir: string
     reason: 'outside_workdir' | 'sensitive_file' | 'both' | 'dangerous_command' | 'git_no_verify'
+    d3MiniHint?: D3MiniHint | undefined
   }>
 > {
   const bySession: Record<
@@ -1761,6 +1770,7 @@ export function getPendingConfirmationsBySession(): Record<
       paths: string[]
       workdir: string
       reason: 'outside_workdir' | 'sensitive_file' | 'both' | 'dangerous_command' | 'git_no_verify'
+      d3MiniHint?: D3MiniHint | undefined
     }>
   > = {}
   for (const [_callId, pending] of pendingConfirmations.entries()) {
@@ -1770,6 +1780,7 @@ export function getPendingConfirmationsBySession(): Record<
       paths: pending.paths,
       workdir: pending.workdir,
       reason: pending.reason,
+      d3MiniHint: pending.d3MiniHint,
     }
     const existing = bySession[pending.sessionId]
     if (existing) {
