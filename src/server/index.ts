@@ -281,7 +281,10 @@ export async function createServerHandle(config: Config): Promise<ServerHandle> 
   async function connectMcpServers(): Promise<void> {
     await Promise.all(
       Object.entries(mcpServers).map(([name, serverConfig]) =>
-        mcpManager.addServer(name, serverConfig).catch((err) => {
+        // Off by default: a `disabled` server is registered (visible/toggleable) but
+        // not connected or spawned at startup, so it emits no connection error and its
+        // backing service can stay down until the user turns it on.
+        mcpManager.addServer(name, serverConfig, { connect: !serverConfig.disabled }).catch((err) => {
           logger.warn('Failed to connect MCP server on startup', { name, error: String(err) })
         }),
       ),

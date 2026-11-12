@@ -1,3 +1,4 @@
+import { createMcpDiscoveryTools } from './discovery-adapter.js'
 import type { Tool, ToolContext } from '../tools/types.js'
 import type { LLMToolDefinition } from '../llm/types.js'
 import type { McpManager } from './manager.js'
@@ -46,5 +47,8 @@ export function createMcpTools(mcpManager: McpManager): Tool[] {
     }
   }
 
+  if (JSON.stringify(tools.map((t) => t.definition)).length > 250_000) {
+    return createMcpDiscoveryTools(mcpManager)
+  }
   return tools
 }

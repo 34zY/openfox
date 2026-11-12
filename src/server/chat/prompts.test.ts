@@ -299,3 +299,16 @@ describe('caveman thinking option (llm.cavemanThinking)', () => {
     expect(prompt).toContain('Same meaning, far fewer tokens.')
   })
 })
+
+describe('configured MCP routing', () => {
+  it('discovers the configured Windows bridge instead of provisioning local services', () => {
+    const prompt = buildTopLevelSystemPrompt('/tmp')
+    expect(prompt).toContain('mcp_list_tools')
+    expect(prompt).toContain('mcp_call_tool')
+    expect(prompt).toContain('Windows')
+    expect(prompt).toContain('list_instances')
+    expect(prompt).not.toContain('sudo docker start')
+    expect(prompt).not.toContain('disabled by default')
+    expect(prompt).not.toContain('stop the backing service')
+  })
+})

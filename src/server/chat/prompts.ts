@@ -241,6 +241,17 @@ To call a sub-agent, use the call_sub_agent tool with:
  * Identical for all top-level agents to preserve KV cache.
  * Agent-specific behavior comes from the runtime reminder.
  */
+function buildConfiguredMcpSection(): string {
+  return `
+
+## CONFIGURED MCP SERVICES
+Use the available MCP tools before investigating infrastructure with the shell. Discover servers with mcp_list_tools, then fetch the required tool schemas and execute them with mcp_call_tool. If those discovery tools are absent, use the available prefixed MCP tools or mcp_config(action: "list") to inspect connection status.
+The configured ghidra server bridges to the user's Windows Ghidra GUI through Monstre. Start with list_instances, select the intended project with connect_instance, and verify the open program before analysis. The Linux workspace does not contain the Windows GUI's open binary. x64dbg and windbg-remote also target Windows applications.
+Use real function tool calls; printing XML or JSON tool calls in a chat message does not execute anything. Do not claim access or results without a successful tool response.
+An explicit request to use a configured MCP authorizes its use within the requested scope. Respect session-disabled servers and tool permissions; report an unavailable server clearly. Do not provision, start, stop, or replace backing services, change endpoints, or disable servers after use unless the user asks for infrastructure changes. For read-only analysis, do not modify programs, comments, files, or debugger execution state.
+`
+}
+
 export function buildTopLevelSystemPrompt(
   workdir: string,
   customInstructions?: string,
@@ -251,7 +262,7 @@ export function buildTopLevelSystemPrompt(
 ): string {
   const base = buildBasePrompt(workdir, customInstructions, skills, modelName, projectId)
   const subAgents = subAgentDefs ? buildSubAgentsSection(subAgentDefs) : ''
-  return base + subAgents
+  return base + buildConfiguredMcpSection() + subAgents
 }
 
 /**

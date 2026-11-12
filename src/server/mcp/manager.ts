@@ -83,12 +83,16 @@ export class McpManager {
     this.onToolsDiscovered = options?.onToolsDiscovered
   }
 
-  async addServer(name: string, config: McpServerConfig): Promise<void> {
+  async addServer(name: string, config: McpServerConfig, opts?: { connect?: boolean }): Promise<void> {
     if (this.servers.has(name)) {
       throw new Error(`MCP server '${name}' already exists`)
     }
     const state: McpServerState = { name, config, status: 'disconnected', tools: [], estimatedTokens: 0 }
     this.servers.set(name, { config, client: undefined, transport: null, state })
+    // opts.connect === false: register the server (visible + toggleable) without
+    // connecting or spawning it. Used at startup for `disabled` servers so they are
+    // off by default; turn one on later via the UI or PUT /api/mcp/servers/:name {disabled:false}.
+    if (opts?.connect === false) return
     await this.connectServer(name)
   }
 

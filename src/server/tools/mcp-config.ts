@@ -18,6 +18,7 @@ interface McpConfigArgs {
   headers?: Record<string, string>
   toolName?: string
   enabled?: boolean
+  disabled?: boolean
   timeout?: number
 }
 
@@ -118,6 +119,11 @@ export const mcpConfigTool: Tool = createTool<McpConfigArgs>(
           timeout: {
             type: 'number',
             description: 'Timeout in seconds for MCP tool calls (optional)',
+          },
+          disabled: {
+            type: 'boolean',
+            description:
+              'For update: false ENABLES (connects) a server and exposes its tools, true DISABLES (hides them). Use false to turn on an on-request server after the user approves.',
           },
         },
         required: ['action'],
@@ -264,6 +270,7 @@ export const mcpConfigTool: Tool = createTool<McpConfigArgs>(
         ...(args.url !== undefined ? { url: args.url } : {}),
         ...(args.headers !== undefined ? { headers: args.headers } : {}),
         ...(args.timeout !== undefined ? { timeout: args.timeout } : {}),
+        ...(args.disabled !== undefined ? { disabled: args.disabled } : {}),
       }
 
       const { error: updateError } = await applyMcpServerUpdate({
