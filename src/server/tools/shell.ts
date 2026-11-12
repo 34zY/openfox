@@ -1,6 +1,4 @@
-import { spawn } from 'node:child_process'
 import { resolve, isAbsolute, relative, join } from 'node:path'
-import { access } from 'node:fs/promises'
 import { readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import stripAnsi from 'strip-ansi'

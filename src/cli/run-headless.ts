@@ -15,7 +15,7 @@ export async function runHeadlessTask(
   }
   console.error(
     "openfox run (agent headless) n'est pas encore cable. " +
-      'Outils web dispo en CLI: `openfox search \"...\"` et `openfox fetch <url>`. ' +
+      'Outils web dispo en CLI: `openfox search "..."` et `openfox fetch <url>`. ' +
       'Pour un agent complet, lance `openfox` (UI web) en attendant le cablage du moteur headless.',
   )
   return 2
