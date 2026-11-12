@@ -7,6 +7,7 @@ import { ToolCallDisplay } from '../shared/ToolCallDisplay'
 import { ToolCallPreparing } from '../shared/ToolCallPreparing'
 import { TodoListDisplay } from '../shared/TodoListDisplay'
 import { AskUserCard } from '../shared/AskUserCard'
+import { MessageAttachments } from '../shared/MessageAttachments.js'
 import { CriteriaGroupDisplay, isCriterionTool } from '../shared/CriteriaGroupDisplay'
 import { isMetadataAddPreparing } from '../../lib/session-metadata'
 import { useSessionStore } from '../../stores/session'
@@ -206,7 +207,8 @@ export const AssistantMessage = memo(function AssistantMessage({
     () => void handleFork(),
   )
 
-  if (elements.length === 0 && !hasThinking) return null
+  const hasAttachments = (message.attachments?.length ?? 0) > 0
+  if (elements.length === 0 && !hasThinking && !hasAttachments) return null
 
   return (
     <div className="feed-item" onContextMenu={(e) => onContextMenu(e, !!sessionId)}>
@@ -359,6 +361,8 @@ export const AssistantMessage = memo(function AssistantMessage({
             }
           }
         })}
+
+        {hasAttachments && <MessageAttachments attachments={message.attachments!} messageId={message.id} />}
 
         {message.partial && (
           <div className="flex items-center gap-1.5 text-[10px] text-accent-warning mt-1">

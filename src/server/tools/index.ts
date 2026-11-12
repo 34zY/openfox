@@ -4,6 +4,7 @@ import type { AgentDefinition } from '../agents/types.js'
 import { getSessionDisabledServers } from '../mcp/session-overrides.js'
 import { readFileTool } from './read.js'
 import { describeImageTool } from './describe-image.js'
+import { attachFileTool } from './attach-file.js'
 import { writeFileTool } from './write.js'
 import { editFileTool } from './edit.js'
 import { runCommandTool } from './shell.js'
@@ -46,6 +47,7 @@ function getBuiltInTools(): Tool[] {
     _builtInTools = [
       readFileTool,
       describeImageTool,
+      attachFileTool,
       writeFileTool,
       editFileTool,
       runCommandTool,

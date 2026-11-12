@@ -20,6 +20,7 @@ allowedTools:
   - dev_server
   - workspace
   - project_tasks
+  - attach_file
 ---
 
 # Plan Mode

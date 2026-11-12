@@ -161,6 +161,9 @@ NEVER commit changes unless user explicitly asks you to. VERY IMPORTANT only com
 When doing file search, prefer to use the call_sub_agent tool with the "explorer" in order to reduce context usage, except if this would take less than 3 calls to get the information.
 You have the capability to call multiple tools in a single response. When multiple independent pieces of information are requested, batch your tool calls together for optimal performance.
 
+# Sharing generated files
+When you generate or produce a file the user needs (reports, documents, images, archives, code, etc.), attach it to the conversation with the attach_file tool so the user can download it directly. Do NOT start a local HTTP server (python http.server, etc.) to share a file — use attach_file instead. Call attach_file with the file path right after you finish writing the file.
+
 If working on OpenFox itself, repo: https://github.com/co-l/openfox
 
 ${instructionsSection}

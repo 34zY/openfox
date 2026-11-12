@@ -23,6 +23,7 @@ allowedTools:
   - mcp_config
   - workspace
   - project_tasks
+  - attach_file
 ---
 
 # Build Mode

@@ -94,6 +94,10 @@ export function MessageAttachments({ attachments, messageId }: MessageAttachment
             )
           }
 
+          const downloadUrl = attachment.data.startsWith('data:')
+            ? attachment.data
+            : `data:${attachment.mimeType};charset=utf-8,${encodeURIComponent(attachment.data)}`
+
           return (
             <div
               key={attachment.id}
@@ -113,6 +117,13 @@ export function MessageAttachments({ attachments, messageId }: MessageAttachment
                     {attachment.data.length > 200 ? '...' : ''}
                   </div>
                 )}
+                <a
+                  href={downloadUrl}
+                  download={attachment.filename}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-accent-primary hover:underline"
+                >
+                  {t({ en: '⬇ Download', fr: '⬇ Télécharger' })}
+                </a>
               </div>
             </div>
           )
